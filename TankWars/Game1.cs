@@ -17,10 +17,18 @@ namespace TankWars {
     }
 
     public class TerrainPiece {
+        public static int BLOCK_SIZE = 66;
+        
         public TerrainType type;
         public Texture2D texture;
         public Vector2 location;
         public int hitPoints;
+
+        public bool HitsBullet( Vector2 bulletLocation ) {
+            return Math.Abs( this.location.X - bulletLocation.X ) < BLOCK_SIZE * 0.5f &&
+                Math.Abs( this.location.Y - bulletLocation.Y ) < BLOCK_SIZE * 0.5f;
+        }
+
     }
 
     public class BlockLocationComparer : IEqualityComparer<TerrainPiece> {
@@ -72,7 +80,9 @@ namespace TankWars {
                 type = typ,
                 texture = typ == TerrainType.Wood ? _woodTexture : _stoneTexture,
                 hitPoints = typ == TerrainType.Wood ? 2 : 10,
-                location = new Vector2( ( rand.Next( 1, 20 ) - 10 ) * 66, ( rand.Next( 1, 20 ) - 10 ) * 66 )
+                location = new Vector2( 
+                    ( rand.Next( 1, 20 ) - 10 ) * TerrainPiece.BLOCK_SIZE,
+                    ( rand.Next( 1, 20 ) - 10 ) * TerrainPiece.BLOCK_SIZE )
             };
         }
 
@@ -152,19 +162,39 @@ namespace TankWars {
             var mouseState = Mouse.GetState( );
             var leftClick = mouseState.LeftButton == ButtonState.Pressed && 
                 _previousMouseState.LeftButton == ButtonState.Released;
-            if (leftClick) {
-                var velocity = Vector2.Transform( -Vector2.UnitY, TankRotationMatrix );
-                var bullet = Tuple.Create( _tankPosition + velocity * 55.0f, velocity );
-                _bullets = _bullets.Concat( new Tuple<Vector2, Vector2>[] { bullet } );
-            }
-
-            _bullets = _bullets
-                .Select( bullet => MoveBullet(bullet) )
-                .Where( bullet => Vector2.Distance( _tankPosition, bullet.Item1 ) < 1000 )
-                .ToArray();
+            if (leftClick) ShootBullet( );
+            MoveBullets( );
             
             _previousMouseState = mouseState;
             base.Update( gameTime );
+        }
+
+        private void MoveBullets( ) {
+            var hitBullets = _bullets.
+                Where( bullet => BulletHitsBlock( bullet ) != null );
+
+            _bullets = _bullets
+                .Where( bullet => !hitBullets.Contains( bullet ) );
+
+            _bullets = _bullets
+                .Select( bullet => MoveBullet( bullet ) )
+                .Where( bullet => Vector2.Distance( _tankPosition, bullet.Item1 ) < 1000 )
+                .ToArray( );
+        }
+
+        private TerrainPiece BulletHitsBlock( Tuple<Vector2, Vector2> bullet ) {
+            var blocks = _terrain.Where( block => block.HitsBullet( bullet.Item1 ) );
+            if (blocks.Count( ) > 0) {
+                return blocks.First( );
+            } else {
+                return null;
+            }
+        }
+
+        private void ShootBullet( ) {
+            var velocity = Vector2.Transform( -Vector2.UnitY, TankRotationMatrix );
+            var bullet = Tuple.Create( _tankPosition + velocity * 55.0f, velocity );
+            _bullets = _bullets.Concat( new Tuple<Vector2, Vector2>[] { bullet } );
         }
 
         private Tuple<Vector2, Vector2> MoveBullet( Tuple<Vector2, Vector2> bullet ) {
