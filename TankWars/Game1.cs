@@ -28,7 +28,66 @@ namespace TankWars {
             return Math.Abs( this.location.X - bulletLocation.X ) < BLOCK_SIZE * 0.5f &&
                 Math.Abs( this.location.Y - bulletLocation.Y ) < BLOCK_SIZE * 0.5f;
         }
+    }
 
+    public class MovingObject {
+        public Vector2 Position;
+        public Vector2 Speed;
+        public void Move( float secondsElapsed ) {
+            Position = Position + Speed * secondsElapsed * 600.0f;
+        }
+    }
+
+    public class Bullet : MovingObject {
+        public static Texture2D texture;
+
+        public static void Load( ContentManager content ) {
+            texture = content.Load<Texture2D>( "bullet" );
+        }
+
+        public void Draw( SpriteBatch spriteBatch, Vector2 objectOffset ) {
+            spriteBatch.Draw( texture, Position + objectOffset, null, Color.White, 0.0f,
+                new Vector2( 16.0f, 16.0f ), 0.3f, SpriteEffects.None, 0.0f );
+        }
+    }
+
+    public class Explosion {
+        public Vector2 Position;
+        public TimeSpan StartTime;
+        private double _age;
+        
+        public TerrainPiece Terrain;
+        
+        private static Texture2D texture;
+
+        public static void Load( ContentManager content ) {
+            texture = content.Load<Texture2D>( "explosion" );
+        }
+
+        public Explosion( TerrainPiece terrain, TimeSpan now ) {
+            Terrain = terrain;
+            Position = terrain.location;
+            StartTime = now;
+        }
+
+        public void Update( TimeSpan gameTime ) {
+            _age = gameTime.TotalSeconds - StartTime.TotalSeconds;
+        }
+
+        private float Magnitude { get { return (float)Math.Max( 1.0 - _age * 2.0, 0.0 ); } }
+
+        public bool Ended { get { return Magnitude < 0.1f; } }
+
+        private Color CurrentColor {
+            get {
+                return new Color( Magnitude, Magnitude, Magnitude, Magnitude );
+            }
+        }
+
+        public void Draw( SpriteBatch spriteBatch, Vector2 objectOffset ) {
+            spriteBatch.Draw( texture, Position + objectOffset, null, CurrentColor, 0.0f,
+                new Vector2( 40.0f, 40.0f ), 1.0f, SpriteEffects.None, 0.0f );
+        }
     }
 
     public class BlockLocationComparer : IEqualityComparer<TerrainPiece> {
@@ -43,17 +102,16 @@ namespace TankWars {
     public class Game1 : Microsoft.Xna.Framework.Game {
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
-        Texture2D _tankTexture;
-        Texture2D _bulletTexture;
-        Texture2D _stoneTexture;
-        Texture2D _woodTexture;
+        Texture2D _tankTexture, _stoneTexture, _woodTexture, _explosionTexture;
         float _secondsElapsed;
+        TimeSpan _gameTime;
         float _tankRotation = 0.0f;
         Vector2 _tankPosition = new Vector2( 0.0f, 0.0f );
-        IEnumerable<Tuple<Vector2, Vector2>> _bullets = new List<Tuple<Vector2, Vector2>>();
-        IEnumerable<TerrainPiece> _terrain;
+        Bullet[] _bullets = new Bullet[] { };
+        Explosion[] _explosions = new Explosion[] { };
+
+        TerrainPiece[] _terrain;
         float _rotationSpeed = 2.0f;
-        float _bulletSpeed = 2.0f;
         MouseState _previousMouseState = new MouseState();
         Random rand = new Random( );
 
@@ -91,13 +149,12 @@ namespace TankWars {
         /// all of your content.
         /// </summary>
         protected override void LoadContent( ) {
-            // Create a new SpriteBatch, which can be used to draw textures.
             spriteBatch = new SpriteBatch( GraphicsDevice );
-
+            Bullet.Load( this.Content );
             _tankTexture = this.Content.Load<Texture2D>( "tank" );
-            _bulletTexture = this.Content.Load<Texture2D>( "bullet" );
             _stoneTexture = this.Content.Load<Texture2D>( "Block_tile" );
             _woodTexture = this.Content.Load<Texture2D>( "Block_wood" );
+            Explosion.Load( this.Content );
 
             _terrain = Enumerable.Range( 1, 100 )
                 .Select( i => RandomTerrain( ) )
@@ -111,7 +168,7 @@ namespace TankWars {
         /// all content.
         /// </summary>
         protected override void UnloadContent( ) {
-            // TODO: Unload any non ContentManager content here
+            this.Content.Unload( );
         }
 
         /// <summary>
@@ -124,6 +181,7 @@ namespace TankWars {
             if (GamePad.GetState( PlayerIndex.One ).Buttons.Back == ButtonState.Pressed)
                 this.Exit( );
             _secondsElapsed = (float)gameTime.ElapsedGameTime.TotalSeconds;
+            _gameTime = gameTime.TotalGameTime;
             var keyboard = Keyboard.GetState( );
             if (keyboard.IsKeyDown( Keys.A )) {
                 _tankRotation -= _rotationSpeed * _secondsElapsed; 
@@ -164,26 +222,32 @@ namespace TankWars {
                 _previousMouseState.LeftButton == ButtonState.Released;
             if (leftClick) ShootBullet( );
             MoveBullets( );
-            
+            foreach( Explosion explosion in _explosions ) explosion.Update( _gameTime );
+            _explosions = _explosions.Where( explosion => !explosion.Ended ).ToArray();
+
             _previousMouseState = mouseState;
             base.Update( gameTime );
         }
 
         private void MoveBullets( ) {
-            var hitBullets = _bullets.
-                Where( bullet => BulletHitsBlock( bullet ) != null );
+            foreach (Bullet bullet in _bullets) bullet.Move( _secondsElapsed );
+
+            var hitBullets = _bullets.Where( bullet => BulletHitsBlock( bullet ) != null );
+
+            if (hitBullets.Count() > 0) {
+                _explosions = _explosions.
+                    Concat( hitBullets.Select( bullet => new Explosion( BulletHitsBlock( bullet ), _gameTime ) ) ).ToArray( );
+
+                _bullets = _bullets.Except( hitBullets ).ToArray();
+            }
 
             _bullets = _bullets
-                .Where( bullet => !hitBullets.Contains( bullet ) );
-
-            _bullets = _bullets
-                .Select( bullet => MoveBullet( bullet ) )
-                .Where( bullet => Vector2.Distance( _tankPosition, bullet.Item1 ) < 1000 )
+                .Where( bullet => Vector2.Distance( _tankPosition, bullet.Position ) < 1000 )
                 .ToArray( );
         }
 
-        private TerrainPiece BulletHitsBlock( Tuple<Vector2, Vector2> bullet ) {
-            var blocks = _terrain.Where( block => block.HitsBullet( bullet.Item1 ) );
+        private TerrainPiece BulletHitsBlock( Bullet bullet ) {
+            var blocks = _terrain.Where( block => block.HitsBullet( bullet.Position ) );
             if (blocks.Count( ) > 0) {
                 return blocks.First( );
             } else {
@@ -193,15 +257,10 @@ namespace TankWars {
 
         private void ShootBullet( ) {
             var velocity = Vector2.Transform( -Vector2.UnitY, TankRotationMatrix );
-            var bullet = Tuple.Create( _tankPosition + velocity * 55.0f, velocity );
-            _bullets = _bullets.Concat( new Tuple<Vector2, Vector2>[] { bullet } );
-        }
-
-        private Tuple<Vector2, Vector2> MoveBullet( Tuple<Vector2, Vector2> bullet ) {
-            return new Tuple<Vector2, Vector2>(
-                bullet.Item1 + bullet.Item2 * _secondsElapsed * 300.0f * _bulletSpeed,
-                bullet.Item2
-                );
+            var bullet = new Bullet { 
+                Position = _tankPosition + velocity * 55.0f, 
+                Speed = velocity };
+            _bullets = _bullets.Concat( new Bullet[] { bullet } ).ToArray();
         }
 
         private Matrix TankRotationMatrix { get { return Matrix.CreateRotationZ( _tankRotation ); } }
@@ -218,7 +277,7 @@ namespace TankWars {
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Draw( GameTime gameTime ) {
             GraphicsDevice.Clear( Color.CornflowerBlue );
-            spriteBatch.Begin( SpriteSortMode.BackToFront, BlendState.AlphaBlend, SamplerState.AnisotropicClamp,
+            spriteBatch.Begin( SpriteSortMode.Immediate, BlendState.AlphaBlend, SamplerState.AnisotropicClamp,
                 DepthStencilState.None, RasterizerState.CullCounterClockwise );
 
             spriteBatch.Draw( _tankTexture, ScreenCenter, null, Color.White, _tankRotation, 
@@ -226,14 +285,16 @@ namespace TankWars {
 
             var objectOffset = ScreenCenter - _tankPosition;
 
-            foreach( Tuple<Vector2,Vector2> bullet in _bullets) {
-                spriteBatch.Draw( _bulletTexture, bullet.Item1 + objectOffset, null, Color.White, 0.0f,
-                    new Vector2( 16.0f, 16.0f ), 0.3f, SpriteEffects.None, 0.0f );
+            foreach( Bullet bullet in _bullets) {
+                bullet.Draw( spriteBatch, objectOffset );
             }
             foreach (TerrainPiece block in _terrain) {
                 spriteBatch.Draw( block.texture, block.location + objectOffset /* block.location */ , 
                     null, Color.White, 0.0f,
                     new Vector2( 34.0f, 34.0f ), 1.0f, SpriteEffects.None, 0.0f );
+            }
+            foreach (Explosion explosion in _explosions) {
+                explosion.Draw( spriteBatch, objectOffset );
             }
             spriteBatch.End( );
             base.Draw( gameTime );
