@@ -28,6 +28,12 @@ namespace TankWars {
             return Math.Abs( this.location.X - bulletLocation.X ) < BLOCK_SIZE * 0.5f &&
                 Math.Abs( this.location.Y - bulletLocation.Y ) < BLOCK_SIZE * 0.5f;
         }
+
+        internal void TakeHit( ) {
+            hitPoints = hitPoints - 1;
+        }
+
+        public bool Destroyed { get { return hitPoints <= 0; } }
     }
 
     public class MovingObject {
@@ -55,18 +61,15 @@ namespace TankWars {
         public Vector2 Position;
         public TimeSpan StartTime;
         private double _age;
-        
-        public TerrainPiece Terrain;
-        
+                
         private static Texture2D texture;
 
         public static void Load( ContentManager content ) {
             texture = content.Load<Texture2D>( "explosion" );
         }
 
-        public Explosion( TerrainPiece terrain, TimeSpan now ) {
-            Terrain = terrain;
-            Position = terrain.location;
+        public Explosion( Bullet bullet, TimeSpan now ) {
+            Position = bullet.Position;
             StartTime = now;
         }
 
@@ -137,7 +140,7 @@ namespace TankWars {
             return new TerrainPiece {
                 type = typ,
                 texture = typ == TerrainType.Wood ? _woodTexture : _stoneTexture,
-                hitPoints = typ == TerrainType.Wood ? 2 : 10,
+                hitPoints = typ == TerrainType.Wood ? 2 : 5,
                 location = new Vector2( 
                     ( rand.Next( 1, 20 ) - 10 ) * TerrainPiece.BLOCK_SIZE,
                     ( rand.Next( 1, 20 ) - 10 ) * TerrainPiece.BLOCK_SIZE )
@@ -236,9 +239,12 @@ namespace TankWars {
 
             if (hitBullets.Count() > 0) {
                 _explosions = _explosions.
-                    Concat( hitBullets.Select( bullet => new Explosion( BulletHitsBlock( bullet ), _gameTime ) ) ).ToArray( );
-
+                    Concat( hitBullets.Select( bullet => new Explosion( bullet, _gameTime ) ) ).ToArray( );
                 _bullets = _bullets.Except( hitBullets ).ToArray();
+                foreach (TerrainPiece terrain in hitBullets.Select( bullet => BulletHitsBlock( bullet ) )) {
+                    terrain.TakeHit( );
+                }
+                _terrain = _terrain.Where( piece => !piece.Destroyed ).ToArray( );
             }
 
             _bullets = _bullets
