@@ -5,6 +5,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TankWars", "TankWars\TankWa
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TankWarsContent", "TankWarsContent\TankWarsContent.contentproj", "{1B470BDB-815C-4D8F-834B-94DB7B2B7950}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BreakingMission", "BreakingMission\BreakingMission\BreakingMission.csproj", "{AD9E896B-EE5A-4EB9-8476-B3F11703974D}"
+EndProject
+Project("{96E2B04D-8817-42C6-938A-82C39BA4D311}") = "BreakingMissionContent", "BreakingMission\BreakingMissionContent\BreakingMissionContent.contentproj", "{6121DBD7-7A16-476D-AFC6-39818CB10501}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x86 = Debug|x86
@@ -17,6 +21,12 @@ Global
 		{5930933B-B269-469E-A645-025633B8716C}.Release|x86.Build.0 = Release|x86
 		{1B470BDB-815C-4D8F-834B-94DB7B2B7950}.Debug|x86.ActiveCfg = Debug|x86
 		{1B470BDB-815C-4D8F-834B-94DB7B2B7950}.Release|x86.ActiveCfg = Release|x86
+		{AD9E896B-EE5A-4EB9-8476-B3F11703974D}.Debug|x86.ActiveCfg = Debug|x86
+		{AD9E896B-EE5A-4EB9-8476-B3F11703974D}.Debug|x86.Build.0 = Debug|x86
+		{AD9E896B-EE5A-4EB9-8476-B3F11703974D}.Release|x86.ActiveCfg = Release|x86
+		{AD9E896B-EE5A-4EB9-8476-B3F11703974D}.Release|x86.Build.0 = Release|x86
+		{6121DBD7-7A16-476D-AFC6-39818CB10501}.Debug|x86.ActiveCfg = Debug|x86
+		{6121DBD7-7A16-476D-AFC6-39818CB10501}.Release|x86.ActiveCfg = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

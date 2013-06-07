@@ -11,52 +11,6 @@ using Microsoft.Xna.Framework.Media;
 
 namespace TankWars {
 
-    public enum TerrainType {
-        Wood,
-        Stone
-    }
-
-    public class TerrainPiece {
-        public static int BLOCK_SIZE = 66;
-        
-        public TerrainType type;
-        public Texture2D texture;
-        public Vector2 location;
-        public int hitPoints;
-
-        public bool HitsBullet( Vector2 bulletLocation ) {
-            return Math.Abs( this.location.X - bulletLocation.X ) < BLOCK_SIZE * 0.5f &&
-                Math.Abs( this.location.Y - bulletLocation.Y ) < BLOCK_SIZE * 0.5f;
-        }
-
-        internal void TakeHit( ) {
-            hitPoints = hitPoints - 1;
-        }
-
-        public bool Destroyed { get { return hitPoints <= 0; } }
-    }
-
-    public class MovingObject {
-        public Vector2 Position;
-        public Vector2 Speed;
-        public void Move( float secondsElapsed ) {
-            Position = Position + Speed * secondsElapsed * 600.0f;
-        }
-    }
-
-    public class Bullet : MovingObject {
-        public static Texture2D texture;
-
-        public static void Load( ContentManager content ) {
-            texture = content.Load<Texture2D>( "bullet" );
-        }
-
-        public void Draw( SpriteBatch spriteBatch, Vector2 objectOffset ) {
-            spriteBatch.Draw( texture, Position + objectOffset, null, Color.White, 0.0f,
-                new Vector2( 16.0f, 16.0f ), 0.3f, SpriteEffects.None, 0.0f );
-        }
-    }
-
     public class Explosion {
         public Vector2 Position;
         public TimeSpan StartTime;
@@ -103,18 +57,20 @@ namespace TankWars {
     }
 
     public class Game1 : Microsoft.Xna.Framework.Game {
+
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
-        Texture2D _tankTexture, _stoneTexture, _woodTexture, _explosionTexture;
+        Texture2D _stoneTexture, _woodTexture;
+        Texture2D _backgroundTexture;
         float _secondsElapsed;
         TimeSpan _gameTime;
-        float _tankRotation = 0.0f;
-        Vector2 _tankPosition = new Vector2( 0.0f, 0.0f );
-        Bullet[] _bullets = new Bullet[] { };
+
+        PlayerTank playerTank;
+        EnemyTank enemyTank;
+
         Explosion[] _explosions = new Explosion[] { };
 
         TerrainPiece[] _terrain;
-        float _rotationSpeed = 2.0f;
         MouseState _previousMouseState = new MouseState();
         Random rand = new Random( );
 
@@ -141,10 +97,13 @@ namespace TankWars {
                 type = typ,
                 texture = typ == TerrainType.Wood ? _woodTexture : _stoneTexture,
                 hitPoints = typ == TerrainType.Wood ? 2 : 5,
-                location = new Vector2( 
-                    ( rand.Next( 1, 20 ) - 10 ) * TerrainPiece.BLOCK_SIZE,
-                    ( rand.Next( 1, 20 ) - 10 ) * TerrainPiece.BLOCK_SIZE )
+                location = RandomPosition() * TerrainPiece.BLOCK_SIZE
             };
+        }
+
+        private Vector2 RandomPosition( ) {
+            var pos = new Vector2( rand.Next( 1, 20 ) - 10, rand.Next( 1, 20 ) - 10 );
+            return pos.LengthSquared() > 3.0 ? pos : RandomPosition( );
         }
 
         /// <summary>
@@ -154,9 +113,12 @@ namespace TankWars {
         protected override void LoadContent( ) {
             spriteBatch = new SpriteBatch( GraphicsDevice );
             Bullet.Load( this.Content );
-            _tankTexture = this.Content.Load<Texture2D>( "tank" );
+            playerTank = new PlayerTank( );
+            enemyTank = new EnemyTank( );
+            Tank.Texture = this.Content.Load<Texture2D>( "tank" );
             _stoneTexture = this.Content.Load<Texture2D>( "Block_tile" );
             _woodTexture = this.Content.Load<Texture2D>( "Block_wood" );
+            _backgroundTexture = this.Content.Load<Texture2D>( "sand" );
             Explosion.Load( this.Content );
 
             _terrain = Enumerable.Range( 1, 100 )
@@ -186,45 +148,14 @@ namespace TankWars {
             _secondsElapsed = (float)gameTime.ElapsedGameTime.TotalSeconds;
             _gameTime = gameTime.TotalGameTime;
             var keyboard = Keyboard.GetState( );
-            if (keyboard.IsKeyDown( Keys.A )) {
-                _tankRotation -= _rotationSpeed * _secondsElapsed; 
-            } else if (keyboard.IsKeyDown( Keys.D )) {
-                _tankRotation += _rotationSpeed * _secondsElapsed; 
-            }
-            if (keyboard.IsKeyDown( Keys.W ) || keyboard.IsKeyDown( Keys.S )) {
-                var move = Vector2.Transform( -Vector2.UnitY, TankRotationMatrix ) * _secondsElapsed * 100.0f;
-                move = move * ( keyboard.IsKeyDown( Keys.W ) ? 1.0f : -1.0f );
-
-                // Check collisions
-                var closeBlocks = _terrain
-                    .Where( block => Vector2.DistanceSquared( block.location, _tankPosition ) < 100 * 100 );
-                var stopDistance = 66f;
-                foreach (TerrainPiece block in closeBlocks) {
-                    if (Math.Abs( _tankPosition.X - block.location.X ) < stopDistance - 2 ) {
-                        if ( ( _tankPosition.Y > block.location.Y &&
-                            _tankPosition.Y < block.location.Y + stopDistance &&
-                            move.Y < 0 ) ||
-                           (_tankPosition.Y < block.location.Y &&
-                            _tankPosition.Y > block.location.Y - stopDistance &&
-                            move.Y > 0) ) move = new Vector2( move.X, 0f );
-                    }
-                    if (Math.Abs( _tankPosition.Y - block.location.Y ) < stopDistance - 2 ) {
-                        if ( ( _tankPosition.X > block.location.X &&
-                            _tankPosition.X < block.location.X + stopDistance &&
-                            move.X < 0) || 
-                            (_tankPosition.X < block.location.X &&
-                            _tankPosition.X > block.location.X - stopDistance &&
-                            move.X > 0) ) move = new Vector2( 0f, move.Y );
-                    }
-                }
-
-                _tankPosition += move;                
-            }
             var mouseState = Mouse.GetState( );
-            var leftClick = mouseState.LeftButton == ButtonState.Pressed && 
-                _previousMouseState.LeftButton == ButtonState.Released;
-            if (leftClick) ShootBullet( );
-            MoveBullets( );
+
+            playerTank.Update( keyboard, mouseState, _secondsElapsed, _terrain );
+            playerTank.MoveBullets( _secondsElapsed );
+            playerTank.Bullets = CheckBulletHits( playerTank.Bullets );
+
+            enemyTank.Update( _secondsElapsed, playerTank );
+
             foreach( Explosion explosion in _explosions ) explosion.Update( _gameTime );
             _explosions = _explosions.Where( explosion => !explosion.Ended ).ToArray();
 
@@ -232,24 +163,18 @@ namespace TankWars {
             base.Update( gameTime );
         }
 
-        private void MoveBullets( ) {
-            foreach (Bullet bullet in _bullets) bullet.Move( _secondsElapsed );
+        private Bullet[] CheckBulletHits( Bullet[] bullets ) {
+            var hitBullets = bullets.Where( bullet => BulletHitsBlock( bullet ) != null );
 
-            var hitBullets = _bullets.Where( bullet => BulletHitsBlock( bullet ) != null );
-
-            if (hitBullets.Count() > 0) {
+            if (hitBullets.Count( ) > 0) {
                 _explosions = _explosions.
                     Concat( hitBullets.Select( bullet => new Explosion( bullet, _gameTime ) ) ).ToArray( );
-                _bullets = _bullets.Except( hitBullets ).ToArray();
                 foreach (TerrainPiece terrain in hitBullets.Select( bullet => BulletHitsBlock( bullet ) )) {
                     terrain.TakeHit( );
                 }
                 _terrain = _terrain.Where( piece => !piece.Destroyed ).ToArray( );
             }
-
-            _bullets = _bullets
-                .Where( bullet => Vector2.Distance( _tankPosition, bullet.Position ) < 1000 )
-                .ToArray( );
+            return bullets.Except( hitBullets ).ToArray( );
         }
 
         private TerrainPiece BulletHitsBlock( Bullet bullet ) {
@@ -260,16 +185,6 @@ namespace TankWars {
                 return null;
             }
         }
-
-        private void ShootBullet( ) {
-            var velocity = Vector2.Transform( -Vector2.UnitY, TankRotationMatrix );
-            var bullet = new Bullet { 
-                Position = _tankPosition + velocity * 55.0f, 
-                Speed = velocity };
-            _bullets = _bullets.Concat( new Bullet[] { bullet } ).ToArray();
-        }
-
-        private Matrix TankRotationMatrix { get { return Matrix.CreateRotationZ( _tankRotation ); } }
 
         private Vector2 ScreenCenter {
             get {
@@ -282,18 +197,16 @@ namespace TankWars {
         /// </summary>
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Draw( GameTime gameTime ) {
-            GraphicsDevice.Clear( Color.CornflowerBlue );
+            GraphicsDevice.Clear( Color.Black );
             spriteBatch.Begin( SpriteSortMode.Immediate, BlendState.AlphaBlend, SamplerState.AnisotropicClamp,
                 DepthStencilState.None, RasterizerState.CullCounterClockwise );
+            var objectOffset = ScreenCenter - playerTank.Position;
+            spriteBatch.Draw( _backgroundTexture, objectOffset, null, Color.White, 0.0f,
+                    new Vector2( 700f, 500f ), 1.0f, SpriteEffects.None, 0.0f );
 
-            spriteBatch.Draw( _tankTexture, ScreenCenter, null, Color.White, _tankRotation, 
-                new Vector2(184.0f,184.0f), 0.2f, SpriteEffects.None, 0.0f);
+            playerTank.Draw( spriteBatch, objectOffset, Color.White );
+            enemyTank.Draw( spriteBatch, objectOffset, new Color(255,180,180));
 
-            var objectOffset = ScreenCenter - _tankPosition;
-
-            foreach( Bullet bullet in _bullets) {
-                bullet.Draw( spriteBatch, objectOffset );
-            }
             foreach (TerrainPiece block in _terrain) {
                 spriteBatch.Draw( block.texture, block.location + objectOffset /* block.location */ , 
                     null, Color.White, 0.0f,
