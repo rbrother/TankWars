@@ -4,7 +4,9 @@ using System.Linq;
 using System.Text;
 
 namespace BreakingMission.Menus {
+
     class ChooseSavingMenu : Menu {
+
         public override void Draw( Microsoft.Xna.Framework.Content.ContentManager contentManager, Microsoft.Xna.Framework.Graphics.SpriteBatch spriteBatch, Microsoft.Xna.Framework.Rectangle screenSize ) {
             base.Draw( contentManager, spriteBatch, screenSize );
             DrawMenuLines(
@@ -14,5 +16,13 @@ namespace BreakingMission.Menus {
                 "3 - Tallennus 3",
                 "Esc - Poistu" );
         }
+
+        protected override object NumberKeyPressed( int number ) {
+            if (number == 1) {
+                return new GameScreen( );
+            }
+            return null;
+        }
+
     }
 }

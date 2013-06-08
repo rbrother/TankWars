@@ -107,7 +107,12 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Bullet.cs" />
+    <Compile Include="Characters\Character.cs" />
+    <Compile Include="Characters\EnemyCharacter.cs" />
+    <Compile Include="Characters\PlayerCharacter.cs" />
     <Compile Include="Fonts.cs" />
+    <Compile Include="GameScreen.cs" />
     <Compile Include="Menus\ChooseSavingMenu.cs" />
     <Compile Include="Menus\MainMenu.cs" />
     <Compile Include="Menus\Menu.cs" />
@@ -116,6 +121,8 @@
     <Compile Include="Program.cs" />
     <Compile Include="BreakingMissionGame.cs" />
     <Compile Include="Screen.cs" />
+    <Compile Include="TerrainPiece.cs" />
+    <Compile Include="Textures.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Game.ico" />

@@ -12,17 +12,9 @@ using Microsoft.Xna.Framework.Media;
 namespace BreakingMission {
 
     abstract class Menu : Screen {
-        protected Texture2D _background;
         protected int menuLinePos;
 
-        protected Texture2D Background {
-            get {
-                if (_background == null) {
-                    _background = contentManager.Load<Texture2D>( "boxes" );
-                }
-                return _background;
-            }
-        }
+        protected Texture2D Background { get { return Textures.Get( "boxes" ); } }
 
         private Keys[] NumberKeys = new Keys[] { 
             Keys.D1, Keys.D2, Keys.D3, Keys.D4, Keys.D5,

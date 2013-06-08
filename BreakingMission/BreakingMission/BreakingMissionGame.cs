@@ -10,9 +10,7 @@ using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Media;
 
 namespace BreakingMission {
-    /// <summary>
-    /// This is the main type for your game
-    /// </summary>
+
     public class BreakingMissionGame : Microsoft.Xna.Framework.Game {
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
@@ -55,16 +53,9 @@ namespace BreakingMission {
             // Create a new SpriteBatch, which can be used to draw textures.
             spriteBatch = new SpriteBatch( GraphicsDevice );
             Fonts.Load( Content );
+            Textures.Load( Content );
             ScreenStack.Push( new MainMenu( ) );
             // TODO: use this.Content to load your game content here
-        }
-
-        /// <summary>
-        /// UnloadContent will be called once per game and is the place to unload
-        /// all content.
-        /// </summary>
-        protected override void UnloadContent( ) {
-            // TODO: Unload any non ContentManager content here
         }
 
         /// <summary>
@@ -77,7 +68,7 @@ namespace BreakingMission {
             if (GamePad.GetState( PlayerIndex.One ).Buttons.Back == ButtonState.Pressed)
                 this.Exit( );
 
-            object result = CurrentScreen.UpdateOuter( );
+            object result = CurrentScreen.UpdateOuter( gameTime.ElapsedGameTime.TotalSeconds );
             if (result != null) {
                 if (result.Equals( "ReturnHigherLevel" )) {
                     ScreenStack.Pop( );
@@ -101,7 +92,7 @@ namespace BreakingMission {
         /// </summary>
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Draw( GameTime gameTime ) {
-            GraphicsDevice.Clear( Color.White );
+            GraphicsDevice.Clear( Color.Black );
             spriteBatch.Begin( );
             // TODO: Add your drawing code here
             CurrentScreen.Draw( Content, spriteBatch, ScreenSize );
