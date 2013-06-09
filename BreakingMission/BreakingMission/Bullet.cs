@@ -31,7 +31,7 @@ namespace BreakingMission {
         }
 
         public void Draw( SpriteBatch spriteBatch ) {
-            spriteBatch.Draw( Textures.Get("bullet"), Position, null, Color.White, 0.0f,
+            spriteBatch.Draw( GameContent.GetTexture("bullet"), Position, null, Color.White, 0.0f,
                 new Vector2( 16.0f, 16.0f ), 0.3f, SpriteEffects.None, 0.0f );
         }
 

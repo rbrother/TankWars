@@ -20,7 +20,6 @@ namespace BreakingMission {
             graphics = new GraphicsDeviceManager( this );
             graphics.IsFullScreen = true;
             graphics.PreferMultiSampling = true;
-
             Content.RootDirectory = "Content";
         }
 
@@ -53,7 +52,7 @@ namespace BreakingMission {
             // Create a new SpriteBatch, which can be used to draw textures.
             spriteBatch = new SpriteBatch( GraphicsDevice );
             Fonts.Load( Content );
-            Textures.Load( Content );
+            GameContent.Load( Content );
             ScreenStack.Push( new MainMenu( ) );
             // TODO: use this.Content to load your game content here
         }

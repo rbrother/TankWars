@@ -14,7 +14,7 @@ namespace BreakingMission {
 
     class GameScreen : Screen {
 
-        readonly static int AREA_SIZE = 60;
+        readonly static int AREA_SIZE = 20; // normal: 60
 
         private TerrainPiece[,] _terrain = new TerrainPiece[AREA_SIZE, AREA_SIZE];
 
@@ -29,10 +29,7 @@ namespace BreakingMission {
                     _terrain[x, y] = new TerrainPiece( ( x + y ) % 2 == 0 ? "grass" : "sand" );
                 }
             }
-            _player = new PlayerCharacter { 
-                Texture = Textures.Get("ukko2"),
-                Position = Vector2.One * AREA_SIZE * 0.5f
-            };
+            _player = new PlayerCharacter { Position = Vector2.One * AREA_SIZE * 0.5f };
         }
 
         public Vector2 MapSize {
@@ -40,7 +37,7 @@ namespace BreakingMission {
         }
 
         public Vector2 MapOffset {
-            get { return new Vector2( 0.5f * ( screenSize.Width - screenSize.Height ), 0f ); }
+            get { return new Vector2( screenSize.Width - screenSize.Height, 0f ); }
         }
 
         public float BlockSize { get { return MapSize.X / AREA_SIZE; } }
@@ -51,7 +48,7 @@ namespace BreakingMission {
         }
 
         public override object Update( ) {
-            var playerResult = _player.Update( keystate, mouseState, secondsElapsed );
+            var playerResult = _player.Update( keystate, mouseState, newMouseLeftClick, newMouseRightClick, secondsElapsed );
             if (playerResult is Bullet) AddBullet( playerResult as Bullet );
             foreach (var enemy in _enemies) {
                 enemy.Update( secondsElapsed, _player );
@@ -77,8 +74,8 @@ namespace BreakingMission {
                     var destination = new Rectangle( 
                         Convert.ToInt32( MapOffset.X + x * blockSize ), 
                         Convert.ToInt32( y * blockSize), 
-                        Convert.ToInt32( blockSize ), 
-                        Convert.ToInt32( blockSize ) );
+                        Convert.ToInt32( blockSize + 1 ), 
+                        Convert.ToInt32( blockSize + 1 ) );
                     _terrain[x, y].Draw( spriteBatch, destination );
                 }
             }
@@ -86,9 +83,8 @@ namespace BreakingMission {
             foreach (var bullet in _bullets) {
                 bullet.Draw( spriteBatch );
             }
-            var mouse = Mouse.GetState( );
-            spriteBatch.Draw( Textures.Get( "target" ), new Vector2( mouse.X, mouse.Y ), null,
-                Color.White, 0f, Vector2.One * 100f, 2f * BlockSize / 100f, SpriteEffects.None, 0f );
+            spriteBatch.Draw( GameContent.GetTexture( "target" ), new Vector2( mouseState.X, mouseState.Y ), null,
+                Color.White, 0f, Vector2.One * 100f, 1.5f * BlockSize / 100f, SpriteEffects.None, 0f );
             
         }
 

@@ -12,10 +12,12 @@ using Microsoft.Xna.Framework.Media;
 
 namespace BreakingMission {
 
-    public static class Textures {
+    public static class GameContent {
 
         private static Dictionary<string, Texture2D> _textures =
             new Dictionary<string, Texture2D>( );
+        private static Dictionary<string, SoundEffect> _sounds =
+            new Dictionary<string, SoundEffect>( );
 
         private static ContentManager _content;
 
@@ -23,11 +25,18 @@ namespace BreakingMission {
             _content = content;
         }
 
-        public static Texture2D Get( string name ) {
-            if ( !_textures.ContainsKey(name) ) {
-                _textures[name] = _content.Load<Texture2D>(name);
+        public static Texture2D GetTexture( string name ) {
+            if (!_textures.ContainsKey( name )) {
+                _textures[name] = _content.Load<Texture2D>( name );
             }
             return _textures[name];
+        }
+
+        public static SoundEffect GetSound( string name ) {
+            if (!_sounds.ContainsKey( name )) {
+                _sounds[name] = _content.Load<SoundEffect>( name );
+            }
+            return _sounds[name];
         }
 
     }

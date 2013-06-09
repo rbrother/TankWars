@@ -20,7 +20,8 @@ namespace BreakingMission {
         protected SpriteBatch spriteBatch;
         protected static KeyboardState keystate, prevKeystate;
         protected static Keys[] newKeyPresses = new Keys[] {};
-        protected MouseState mouseState;
+        protected MouseState mouseState, prevMouseState;
+        protected bool newMouseLeftClick, newMouseRightClick;
         protected double secondsElapsed;
 
         public virtual void Draw( ContentManager contentManager, SpriteBatch spriteBatch, Rectangle screenSize ) {
@@ -35,8 +36,13 @@ namespace BreakingMission {
             newKeyPresses = keystate.GetPressedKeys( ).
                 Except( prevKeystate.GetPressedKeys( ) ).ToArray();
             mouseState = Mouse.GetState( );
+            newMouseLeftClick = prevMouseState.LeftButton == ButtonState.Released && 
+                mouseState.LeftButton == ButtonState.Pressed;
+            newMouseRightClick = prevMouseState.RightButton == ButtonState.Released &&
+                mouseState.RightButton == ButtonState.Pressed;
             object result = Update( );
             prevKeystate = keystate;
+            prevMouseState = mouseState;
             return result;
         }
 

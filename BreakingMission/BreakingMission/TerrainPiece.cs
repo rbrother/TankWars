@@ -21,7 +21,7 @@ namespace BreakingMission {
         }
 
         public void Draw( SpriteBatch spriteBatch, Rectangle destination ) {
-            spriteBatch.Draw( Textures.Get( "block_" + _terrainName), destination, Color.White );
+            spriteBatch.Draw( GameContent.GetTexture( "block_" + _terrainName), destination, Color.White );
         }
 
     }

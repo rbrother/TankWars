@@ -14,7 +14,7 @@ namespace BreakingMission {
     abstract class Menu : Screen {
         protected int menuLinePos;
 
-        protected Texture2D Background { get { return Textures.Get( "boxes" ); } }
+        protected Texture2D Background { get { return GameContent.GetTexture( "boxes" ); } }
 
         private Keys[] NumberKeys = new Keys[] { 
             Keys.D1, Keys.D2, Keys.D3, Keys.D4, Keys.D5,
