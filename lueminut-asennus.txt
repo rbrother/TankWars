@@ -1,0 +1,6 @@
+Installoi:
+Visual Studio 2010
+Visual Studio 2010 SP1
+Games for Windows 3.5: https://www.microsoft.com/en-us/download/confirmation.aspx?id=5549
+    (needed for XNA)
+XNA Game Studio 4.0

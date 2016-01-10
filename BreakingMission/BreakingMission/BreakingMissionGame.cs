@@ -19,17 +19,16 @@ namespace BreakingMission {
         public BreakingMissionGame( ) {
             graphics = new GraphicsDeviceManager( this );
             graphics.IsFullScreen = true;
+            graphics.PreferredBackBufferHeight = ScreenSize.Width;
+            graphics.PreferredBackBufferWidth = ScreenSize.Height;
             graphics.PreferMultiSampling = true;
             Content.RootDirectory = "Content";
         }
 
         private Rectangle ScreenSize {
             get {
-                return new Rectangle(
-                    0, 0,
-                    GraphicsDevice.DisplayMode.Width,
-                    GraphicsDevice.DisplayMode.Height );
-            }
+                var bounds = System.Windows.Forms.Screen.PrimaryScreen.Bounds;
+                return new Rectangle( 0, 0, bounds.Width, bounds.Height ); }
         }
 
         /// <summary>
@@ -99,5 +98,5 @@ namespace BreakingMission {
             spriteBatch.End( );
             base.Draw( gameTime );
         }
-    }
+    } 
 }
