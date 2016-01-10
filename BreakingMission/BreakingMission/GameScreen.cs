@@ -30,6 +30,7 @@ namespace BreakingMission {
                 }
             }
             _player = new PlayerCharacter { Position = Vector2.One * AREA_SIZE * 0.5f };
+            MediaPlayer.Play(GameContent.GetSong("biisit/niitty"));
         }
 
         public Vector2 MapSize {

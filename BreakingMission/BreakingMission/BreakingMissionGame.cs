@@ -53,7 +53,8 @@ namespace BreakingMission {
             Fonts.Load( Content );
             GameContent.Load( Content );
             ScreenStack.Push( new MainMenu( ) );
-            // TODO: use this.Content to load your game content here
+            var song = Content.Load<Song>("biisit/tuuli");
+            MediaPlayer.Play(song);
         }
 
         /// <summary>

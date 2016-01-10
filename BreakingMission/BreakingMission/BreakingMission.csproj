@@ -124,7 +124,7 @@
     <Compile Include="BreakingMissionGame.cs" />
     <Compile Include="Screen.cs" />
     <Compile Include="TerrainPiece.cs" />
-    <Compile Include="Textures.cs" />
+    <Compile Include="GameContent.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Game.ico" />
